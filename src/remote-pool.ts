@@ -26,6 +26,7 @@ if (!process.env.REMOTE_DB_CA_FILE) {
 
 if (process.env.REMOTE_DB_SSL) {
   config.ssl = {
+    ciphers: 'DEFAULT:@SECLEVEL=1',
     key: readFileSync(process.env.REMOTE_DB_KEY_FILE),
     cert: readFileSync(process.env.REMOTE_DB_CERT_FILE),
     ca: readFileSync(process.env.REMOTE_DB_CA_FILE),
