@@ -1,0 +1,17 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+        "tslint:recommended"
+    ],
+    "jsRules": {},
+    "rules": {
+        "quotemark": [ true, "single" ],
+        "no-consecutive-blank-lines": [ true, 2 ],
+        "no-magic-numbers": [ true, -1, 0, 1, 10 ],
+        "no-irregular-whitespace": true,
+        "whitespace": [ true, "check-branch", "check-decl", "check-operator", "check-module", "check-separator", "check-type", "check-typecast" ],
+        "object-literal-sort-keys": false,
+        "max-line-length": [ true, 240 ]
+    },
+    "rulesDirectory": []
+}
