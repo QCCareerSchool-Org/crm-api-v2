@@ -14,12 +14,12 @@ const config: mysql.PoolConfig = {
   debug: false,
 };
 
-if (!process.env.REMOTE_DB_KEY_FILE) {
-  throw Error('Environment variable REMOTE_DB_KEY_FILE is required');
-}
-if (!process.env.REMOTE_DB_CERT_FILE) {
-  throw Error('Environment variable REMOTE_DB_CERT_FILE is required');
-}
+// if (!process.env.REMOTE_DB_KEY_FILE) {
+//   throw Error('Environment variable REMOTE_DB_KEY_FILE is required');
+// }
+// if (!process.env.REMOTE_DB_CERT_FILE) {
+//   throw Error('Environment variable REMOTE_DB_CERT_FILE is required');
+// }
 if (!process.env.REMOTE_DB_CA_FILE) {
   throw Error('Environment variable REMOTE_DB_CA_FILE is required');
 }
@@ -27,8 +27,8 @@ if (!process.env.REMOTE_DB_CA_FILE) {
 if (process.env.REMOTE_DB_SSL) {
   config.ssl = {
     ciphers: 'DEFAULT:@SECLEVEL=1',
-    key: readFileSync(process.env.REMOTE_DB_KEY_FILE),
-    cert: readFileSync(process.env.REMOTE_DB_CERT_FILE),
+//    key: readFileSync(process.env.REMOTE_DB_KEY_FILE),
+//    cert: readFileSync(process.env.REMOTE_DB_CERT_FILE),
     ca: readFileSync(process.env.REMOTE_DB_CA_FILE),
   };
 }
