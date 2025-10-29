@@ -17,12 +17,14 @@ import { router as studentRouter, routerSecure as studentRouterSecure } from './
 
 dotenv.config();
 
-// configuration
-const app = express();
-const HTTP_PORT = 9080;
-const HTTPS_PORT = 9443;
+if (typeof process.env.PORT === 'undefined') {
+  throw Error('Environment variable PORT is undefined');
+}
+const HTTP_PORT = process.env.PORT;
 const VERSION = 2;
 
+// configuration
+const app = express();
 app.use(helmet());
 app.use(compression());
 app.use(cors({
