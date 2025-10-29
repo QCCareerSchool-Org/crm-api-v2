@@ -74,20 +74,5 @@ process.on('uncaughtException', (err) => {
 });
 
 // start the server
-if (process.env.MODE === 'production') {
-  try {
-    const key = fs.readFileSync('755108159.key');
-    const cert = fs.readFileSync('755108159.crt');
-    const ca = [];
-    ca.push(fs.readFileSync('755108159-intermediate-1.crt'));
-    ca.push(fs.readFileSync('755108159-intermediate-2.crt'));
-    const httpsOptions = { key, cert, ca };
-    https.createServer(httpsOptions, app).listen(HTTPS_PORT);
-    logger.info(`Server running on port ${HTTPS_PORT}`);
-  } catch (err) {
-    logger.error('Could not start HTTPS server', err);
-  }
-} else {
-  http.createServer(app).listen(HTTP_PORT);
-  logger.info(`Server running on port ${HTTP_PORT}`);
-}
+http.createServer(app).listen(HTTP_PORT);
+logger.info(`Server running on port ${HTTP_PORT}`);
