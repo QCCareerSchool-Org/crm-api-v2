@@ -1,8 +1,10 @@
-import * as dotenv from 'dotenv';
+// import * as dotenv from 'dotenv';
 import { createLogger, format, transports } from 'winston';
 import { NodemailerTransport } from '@qccareerschool/winston-nodemailer';
+import path from 'path';
+import * as dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 if (typeof process.env.EMAIL_USERNAME === 'undefined') {
   throw new Error('EMAIL_USERNAME not specified in .env file');

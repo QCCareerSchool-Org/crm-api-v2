@@ -4,10 +4,9 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import fs from 'fs';
 import helmet from 'helmet';
 import http from 'http';
-import https from 'https';
+import path from 'path';
 import { logger } from './logger';
 
 import { authenticate, checkAuthentication, options as authenticateOptions } from './authentication';
@@ -15,7 +14,7 @@ import { router as countryRouter, routerSecure as countryRouterSecure } from './
 import { router as countryCodesRouter, routerSecure as countryCodesRouterSecure } from './country-calling-codes/index';
 import { router as studentRouter, routerSecure as studentRouterSecure } from './students/index';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 if (typeof process.env.PORT === 'undefined') {
   throw Error('Environment variable PORT is undefined');

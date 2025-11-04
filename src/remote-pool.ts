@@ -1,8 +1,9 @@
 import * as dotenv from 'dotenv';
 import { readFileSync } from 'fs';
 import * as mysql from 'promise-mysql';
+import path from 'path';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const config: mysql.PoolConfig = {
   connectionLimit: 100,

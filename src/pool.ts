@@ -1,7 +1,8 @@
 import * as dotenv from 'dotenv';
 import * as mysql from 'promise-mysql';
+import path from 'path';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 export default mysql.createPool({
   connectionLimit: 100,

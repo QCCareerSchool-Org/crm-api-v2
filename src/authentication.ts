@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 import * as express from 'express';
 import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
+import path from 'path';
 
 import * as HttpStatus from '@qccareerschool/http-status';
 import config from './config';
@@ -12,7 +13,7 @@ import * as keys from './keys';
 import { logger } from './logger';
 import pool from './pool';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 type AccountType = 'admin' | 'tutor' | 'student';
 

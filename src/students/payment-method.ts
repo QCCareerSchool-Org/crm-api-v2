@@ -390,10 +390,10 @@ LIMIT 1`;
           apiPassword = paysafeCredentials.gbApiPassword;
           if (paymentMethods[0].currency_code === 'GBP') {
             accountNumber = paysafeCredentials.gbAccountGBP;
-          } else if (paymentMethods[0].currency_code === 'AUD') {
-            accountNumber = paysafeCredentials.gbAccountAUD;
-          } else if (paymentMethods[0].currency_code === 'NZD') {
-            accountNumber = paysafeCredentials.gbAccountNZD;
+          // } else if (paymentMethods[0].currency_code === 'AUD') {
+          //   accountNumber = paysafeCredentials.gbAccountAUD;
+          // } else if (paymentMethods[0].currency_code === 'NZD') {
+          //   accountNumber = paysafeCredentials.gbAccountNZD;
           } else {
             throw new HttpStatus.Conflict('Unsupported currency for Paysafe GB');
           }

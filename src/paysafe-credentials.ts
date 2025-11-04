@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 if (typeof process.env.PAYSAFE_ENVIRONMENT === 'undefined') {
   throw new Error('PAYSAFE_ENVIRONMENT is undefined');
@@ -79,12 +80,12 @@ if (typeof process.env.GB_PAYSAFE_ACCOUNT_NUMBER_GBP === 'undefined') {
 }
 export const gbAccountGBP = process.env.GB_PAYSAFE_ACCOUNT_NUMBER_GBP;
 
-if (typeof process.env.GB_PAYSAFE_ACCOUNT_NUMBER_AUD === 'undefined') {
-  throw new Error('GB_PAYSAFE_ACCOUNT_NUMBER_AUD is undefined');
-}
-export const gbAccountAUD = process.env.GB_PAYSAFE_ACCOUNT_NUMBER_AUD;
+// if (typeof process.env.GB_PAYSAFE_ACCOUNT_NUMBER_AUD === 'undefined') {
+//   throw new Error('GB_PAYSAFE_ACCOUNT_NUMBER_AUD is undefined');
+// }
+// export const gbAccountAUD = process.env.GB_PAYSAFE_ACCOUNT_NUMBER_AUD;
 
-if (typeof process.env.GB_PAYSAFE_ACCOUNT_NUMBER_NZD === 'undefined') {
-  throw new Error('GB_PAYSAFE_ACCOUNT_NUMBER_NZD is undefined');
-}
-export const gbAccountNZD = process.env.GB_PAYSAFE_ACCOUNT_NUMBER_NZD;
+// if (typeof process.env.GB_PAYSAFE_ACCOUNT_NUMBER_NZD === 'undefined') {
+//   throw new Error('GB_PAYSAFE_ACCOUNT_NUMBER_NZD is undefined');
+// }
+// export const gbAccountNZD = process.env.GB_PAYSAFE_ACCOUNT_NUMBER_NZD;
