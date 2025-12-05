@@ -42,16 +42,6 @@ export const logger = createLogger({
     //
     new transports.File({ filename: 'error.log', level: 'error' }),
     new transports.File({ filename: 'combined.log' }),
-    // new NodemailerTransport({
-    //   auth: { pass: password, user: username },
-    //   filter: ({ level, message, meta }) => level === 'error' || level === 'crit' || level === 'alert' || level === 'emerg',
-    //   from,
-    //   host,
-    //   port: 587,
-    //   secure: false,
-    //   tags: [ 'crm-api' ],
-    //   to,
-    // }),
   ],
 });
 
@@ -67,7 +57,7 @@ if (process.env.NODE_ENV === 'production') {
     host,
     port: 587,
     secure: false,
-    tags: [ 'crm-api' ],
+    tags: [ 'crm-v2' ],
     to,
   }));
 } else {
