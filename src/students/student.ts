@@ -5,6 +5,9 @@ import * as fs from 'fs';
 import * as HttpStatus from '@qccareerschool/http-status';
 import { logger } from '../logger';
 import pool from '../pool';
+import { RowDataPacket } from 'mysql2';
+import { ICountry } from '../countries/country';
+import { IProvince } from '../countries/provinces';
 
 /**
  * .
@@ -30,39 +33,10 @@ export function options(req: express.Request, res: express.Response): void {
  */
 export async function get(req: express.Request, res: express.Response): Promise<void> {
 
-  interface ICountry {
-    id: number;
-    code: string;
-    name: string;
-  }
-
-  interface IProvince {
-    id: number;
-    code: string;
-    name: string;
-  }
-
-  interface IStudent {
-    sex: string;
-    first_name: string;
-    last_name: string;
-    address1: string;
-    address2: string;
-    city: string;
-    province_id: number;
-    postal_code: string;
-    country_id: number;
-    telephone_country_code: number;
-    telephone_number: string;
-    email_address: string;
-    country?: ICountry;
-    province?: IProvince;
-  }
-
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -72,11 +46,12 @@ postal_code, country_id, telephone_country_code, telephone_number, email_address
 FROM students
 WHERE id = ?
 LIMIT 1`;
-      const students: IStudent[] = await connection.query(sqlSelectStudent, req.params.sId);
-      if (!students.length) {
+      const [students] = await connection.query<IStudent[]>(sqlSelectStudent, [req.params.sId]);
+      const student = students[0];
+      if (!student) {
         throw new HttpStatus.NotFound('student not found');
       }
-      const result = students[0];
+      const result = student;
 
       // get country data
       const sqlSelectCountry = `
@@ -84,13 +59,14 @@ SELECT id, code, name
 FROM countries
 WHERE id = ?
 LIMIT 1`;
-      const countries: ICountry[] = await connection.query(sqlSelectCountry, students[0].country_id);
-      if (!countries.length) {
+      const [countries] = await connection.query<ICountry[]>(sqlSelectCountry, [student.country_id]);
+      const country = countries[0];
+      if (!country) {
         throw new HttpStatus.InternalServerError('country not found');
       }
-      result.country = countries[0];
+      result.country = country;
 
-      if (students[0].province_id !== null) {
+      if (student.province_id !== null) {
 
         // get province data
         const sqlSelectProvince = `
@@ -98,7 +74,7 @@ SELECT id, code, name
 FROM provinces
 WHERE id = ?
 LIMIT 1`;
-        const provinces: IProvince[] = await connection.query(sqlSelectProvince, students[0].province_id);
+        const [provinces] = await connection.query<IProvince[]>(sqlSelectProvince, [student.province_id]);
         if (!provinces.length) {
           throw new HttpStatus.InternalServerError('province not found');
         }
@@ -233,12 +209,12 @@ export async function patch(req: express.Request, res: express.Response): Promis
     }
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const [students] = await connection.query<IStudent[]>('SELECT id FROM students WHERE id = ?', [req.params.sId]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
@@ -256,15 +232,23 @@ export async function patch(req: express.Request, res: express.Response): Promis
                         LEFT JOIN students s ON s.country_id = c.id
                         WHERE s.id = ?
                         LIMIT 1`;
-          const countries = await connection.query(sql, req.params.sId);
-          countryName = countries[0].name.toLowerCase();
+          const [countries] = await connection.query<ICountry[]>(sql, [req.params.sId]);
+          const country = countries[0];
+          if (!country) {
+            throw Error('Country not found');
+          }
+          countryName = country.name.toLowerCase();
 
         } else { // country was supplied
 
           // look up the supplied country
           const sql = 'SELECT c.name FROM countries c WHERE c.id = ?';
-          const countries = await connection.query(sql, req.body.country_id);
-          countryName = countries[0].name.toLowerCase();
+          const [countries] = await connection.query<ICountry[]>(sql, [req.body.country_id]);
+           const country = countries[0];
+          if (!country) {
+            throw Error('Country not found');
+          }
+          countryName = country.name.toLowerCase();
         }
 
         if (countryName === 'canada' || countryName === 'united states' || countryName === 'australia') {
@@ -336,7 +320,7 @@ export async function getAddress(req: express.Request, res: express.Response): P
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -345,11 +329,12 @@ SELECT address1, address2, city, province_id, postal_code, country_id
 FROM students
 WHERE id = ?
 LIMIT 1`;
-      const students = await connection.query(sqlSelectStudent, req.params.sId);
-      if (!students.length) {
+      const [ students ] = await connection.query<IStudent[]>(sqlSelectStudent, [req.params.sId]);
+      const student = students[0];
+      if (!student) {
         throw new HttpStatus.NotFound('student not found');
       }
-      const result = students[0];
+      const result = student;
 
       // get country data
       const sqlSelectCountry = `
@@ -357,13 +342,14 @@ SELECT id, code, name
 FROM countries
 WHERE id = ?
 LIMIT 1`;
-      const countries = await connection.query(sqlSelectCountry, students[0].country_id);
-      if (!countries.length) {
+      const [countries] = await connection.query<ICountry[]>(sqlSelectCountry, [student.country_id]);
+      const country = countries[0];
+      if (!country) {
         throw new HttpStatus.InternalServerError('country not found');
       }
-      result.country = countries[0];
+      result.country = country;
 
-      if (students[0].province_id !== null) {
+      if (student.province_id !== null) {
 
         // get province data
         const sqlSelectProvince = `
@@ -371,7 +357,7 @@ SELECT id, code, name
 FROM provinces
 WHERE id = ?
 LIMIT 1`;
-        const provinces = await connection.query(sqlSelectProvince, students[0].province_id);
+        const [ provinces ] = await connection.query<IProvince[]>(sqlSelectProvince, student.province_id);
         if (!provinces.length) {
           throw new HttpStatus.InternalServerError('province not found');
         }
@@ -464,19 +450,20 @@ export async function updateAddress(req: express.Request, res: express.Response)
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const students = await connection.query('SELECT id FROM students WHERE id = ?', [req.params.sId]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
 
       // look up the supplied country
       const sqlSelectCountries = 'SELECT c.name, c.needs_postal_code FROM countries c WHERE c.id = ?';
-      const countries = await connection.query(sqlSelectCountries, payload.country_id);
-      if (!countries.length) {
+      const [countries] = await connection.query<ICountry[]>(sqlSelectCountries, [payload.country_id]);
+      const country = countries[0];
+      if (!country) {
         throw new HttpStatus.UnprocessableEntity('invalid country_id');
       }
-      const countryName = countries[0].name.toLowerCase();
-      const needsPostalCode = countries[0].needs_postal_code;
+      const countryName = country.name.toLowerCase();
+      const needsPostalCode = country.needs_postal_code;
 
       if (countryName === 'canada' || countryName === 'united states' || countryName === 'australia') {
         if (payload.province_id === null) {
@@ -567,11 +554,12 @@ export async function getEmailAddress(req: express.Request, res: express.Respons
                                 FROM students
                                 WHERE id = ?
                                 LIMIT 1`;
-      const students = await connection.query(sqlSelectStudent, req.params.sId);
-      if (!students.length) {
+      const [students] = await connection.query<IStudent[]>(sqlSelectStudent, [req.params.sId]);
+      const student = students[0];
+      if (!student) {
         throw new HttpStatus.NotFound('student not found');
       }
-      const result = students[0].email_address;
+      const result = student.email_address;
 
       res.send(result);
 
@@ -625,7 +613,7 @@ export async function updateEmailAddress(req: express.Request, res: express.Resp
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const students = await connection.query('SELECT id FROM students WHERE id = ?', [req.params.sId]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
@@ -688,7 +676,7 @@ export async function getTelephoneNumber(req: express.Request, res: express.Resp
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -696,13 +684,14 @@ export async function getTelephoneNumber(req: express.Request, res: express.Resp
                                 FROM students
                                 WHERE id = ?
                                 LIMIT 1`;
-      const students = await connection.query(sqlSelectStudent, req.params.sId);
-      if (!students.length) {
+      const [students] = await connection.query<IStudent[]>(sqlSelectStudent, [req.params.sId]);
+      const student = students[0];
+      if (!student) {
         throw new HttpStatus.NotFound('student not found');
       }
       const result = {
-        country_code: students[0].telephone_country_code,
-        number: students[0].telephone_number,
+        country_code: student.telephone_country_code,
+        number: student.telephone_number,
       };
 
       res.send(result);
@@ -779,7 +768,7 @@ export async function updateTelephoneNumber(req: express.Request, res: express.R
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const students = await connection.query('SELECT id FROM students WHERE id = ?', [req.params.sId]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
@@ -837,4 +826,22 @@ function fixNATelephoneNumber(telephoneNumber: string): string {
   return telephoneNumber; // there's nothing we can do
 
   /* tslint:enable:no-magic-numbers */
+}
+
+export interface IStudent extends RowDataPacket {
+  id: number;
+  sex: string;
+  first_name: string;
+  last_name: string;
+  address1: string;
+  address2: string;
+  city: string;
+  province_id: number;
+  postal_code: string;
+  country_id: number;
+  telephone_country_code: number;
+  telephone_number: string;
+  email_address: string;
+  country?: ICountry;
+  province?: IProvince;
 }

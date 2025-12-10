@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as HttpStatus from '@qccareerschool/http-status';
 import { logger } from '../logger';
 import pool from '../pool';
+import { RowDataPacket } from 'mysql2';
 
 /**
  * .
@@ -39,12 +40,12 @@ export async function get(req: express.Request, res: express.Response): Promise<
 
     try {
 
-      const countries = await connection.query(countrySql, req.params.cId);
+      const countries = await connection.query(countrySql, [req.params.cId]);
       if (!countries.length)
         throw new HttpStatus.NotFound('Country not found.');
 
       // retrieve the list of provinces
-      const provinces = await connection.query(sql, req.params.cId);
+      const provinces = await connection.query(sql, [req.params.cId]);
 
       res.setHeader('X-Total', provinces.length);
       res.send(provinces);
@@ -75,24 +76,32 @@ export async function getAll(req: express.Request, res: express.Response): Promi
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
       let sql = null;
       let data = null;
 
+      interface IResult extends RowDataPacket {
+        id: number;
+        code: number;
+        name: string;
+        country_id: number;
+        country_code: string
+        country_name: string;
+      }
       if (typeof req.query.code !== 'undefined' && req.query.code.length) {
         sql = 'SELECT p.id, p.code, p.name, p.country_id, c.id AS country_id, c.code AS country_code, c.name AS country_name FROM provinces p LEFT JOIN countries c ON c.id = p.country_id WHERE p.code LIKE ?';
-        data = req.query.code;
+        data = [ req.query.code ];
       } else if (typeof req.query.name !== 'undefined' && req.query.name.length) {
         sql = 'SELECT p.id, p.code, p.name, p.country_id , c.id AS country_id, c.code AS country_code, c.name AS country_name FROM provinces p LEFT JOIN countries c ON c.id = p.country_id WHERE p.name LIKE ?';
-        data = req.query.name;
+        data = [ req.query.name ];
       } else {
         sql = 'SELECT p.id, p.code, p.name, p.country_id, c.id AS country_id, c.code AS country_code, c.name AS country_name FROM provinces p LEFT JOIN countries c ON c.id = p.country_id';
       }
 
-      const provinces = await connection.query(sql, data);
+      const [ provinces ] = await connection.query<IResult[]>(sql, data);
 
       const result = [];
       for (const p of provinces) {
@@ -125,4 +134,10 @@ export async function getAll(req: express.Request, res: express.Response): Promi
     logger.error(err);
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
   }
+}
+
+export interface IProvince extends RowDataPacket {
+  id: number;
+  code: string;
+  name: string;
 }

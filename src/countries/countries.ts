@@ -42,10 +42,10 @@ export async function get(req: express.Request, res: express.Response): Promise<
 
       if (typeof req.query.code !== 'undefined' && req.query.code.length) {
         sql = 'SELECT id, code, name FROM countries WHERE code LIKE ? ORDER BY name';
-        countries = await connection.query(sql, req.query.code);
+        countries = await connection.query(sql, [req.query.code]);
       } else if (typeof req.query.name !== 'undefined' && req.query.name.length) {
         sql = 'SELECT id, code, name FROM countries WHERE name LIKE ? ORDER BY name';
-        countries = await connection.query(sql, req.query.name);
+        countries = await connection.query(sql, [req.query.name]);
       } else {
         sql = 'SELECT id, code, name FROM countries ORDER BY name';
         countries = await connection.query(sql);

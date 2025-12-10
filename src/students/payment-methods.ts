@@ -6,7 +6,7 @@ import { logger } from '../logger';
 import * as paysafeCredentials from '../paysafe-credentials';
 import pool from '../pool';
 
-import { createOrderId } from './payment-method';
+import { createOrderId, IPaymentMethod } from './payment-method';
 
 import { Paysafe } from '@qccareerschool/paysafe';
 // import { Authorization } from '@qccareerschool/paysafe/dist/card-payments/authorization';
@@ -17,6 +17,7 @@ import { CardExpiry } from '@qccareerschool/paysafe/dist/common/card-expiry';
 import { Address } from '@qccareerschool/paysafe/dist/customer-vault/address';
 import { Card as ProfileCard } from '@qccareerschool/paysafe/dist/customer-vault/card';
 import { Profile } from '@qccareerschool/paysafe/dist/customer-vault/profile';
+import { RowDataPacket } from 'mysql2';
 
 /**
  * .
@@ -50,7 +51,7 @@ export async function get(req: express.Request, res: express.Response): Promise<
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const students = await connection.query('SELECT id FROM students WHERE id = ?', [req.params.sId]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
@@ -74,16 +75,16 @@ AND deleted = 0`;
         sqlSelectPaymentMethods += `
 AND NOT t.name = 'Cheques'`;
       }
-      const paymentMethods = await connection.query(sqlSelectPaymentMethods, req.params.eId);
+      const [paymentMethods] = await connection.query<IPaymentMethod[]>(sqlSelectPaymentMethods, [req.params.eId]);
       const len = paymentMethods.length;
 
       for (let i = 0; i < len; i++) {
-        if (paymentMethods[i].payment_type === 'eSelect Plus') {
-          delete paymentMethods[i].cardeasexml_card_hash;
-          delete paymentMethods[i].cardeasexml_card_reference;
+        if (paymentMethods[i]!.payment_type === 'eSelect Plus') {
+          delete paymentMethods[i]!.cardeasexml_card_hash;
+          delete paymentMethods[i]!.cardeasexml_card_reference;
         }
-        if (paymentMethods[i].payment_type === 'CardEaseXML') {
-          delete paymentMethods[i].eselect_plus_data_key;
+        if (paymentMethods[i]!.payment_type === 'CardEaseXML') {
+          delete paymentMethods[i]!.eselect_plus_data_key;
         }
       }
 
@@ -193,7 +194,7 @@ export async function create(req: express.Request, res: express.Response): Promi
 
     try {
 
-      interface IEnrollment {
+      interface IEnrollment extends RowDataPacket {
         student_id?: number;
         currency_code: string;
         course_prefix: string;
@@ -203,7 +204,7 @@ export async function create(req: express.Request, res: express.Response): Promi
 
       let enrollments: IEnrollment[] | null = null;
 
-      interface IStudent {
+      interface IStudent extends RowDataPacket {
         id: number;
         sex: string;
         first_name: string;
@@ -226,8 +227,9 @@ LEFT JOIN countries c ON c.id = s.country_id
 LEFT JOIN provinces p ON p.id = s.province_id
 WHERE s.id = ?;
 `;
-      const students: IStudent[] = await connection.query(sqlSelectStudent, req.params.sId);
-      if (!students.length) {
+      const [students] = await connection.query<IStudent[]>(sqlSelectStudent, [req.params.sId]);
+      const student = students[0];
+      if (!student) {
         throw new HttpStatus.NotFound('student not found');
       }
 
@@ -241,15 +243,16 @@ LEFT JOIN students s ON s.id = e.student_id
 WHERE e.student_id = ?
 AND e.id = ?
 LIMIT 1`;
-      enrollments = await connection.query(sql, [req.params.sId, req.params.eId]) as IEnrollment[];
-      if (!enrollments.length) {
+      [enrollments] = await connection.query<IEnrollment[]>(sql, [req.params.sId, req.params.eId]);
+      const enrollment = enrollments[0];
+      if (!enrollment) {
         throw new HttpStatus.NotFound('enrollment not found');
       }
 
       let company;
-      if (enrollments[0].currency_code === 'GBP' || enrollments[0].currency_code === 'AUD' || enrollments[0].currency_code === 'NZD') {
+      if (enrollment.currency_code === 'GBP' || enrollment.currency_code === 'AUD' || enrollment.currency_code === 'NZD') {
         company = 'GB';
-      } else if (enrollments[0].currency_code === 'USD') {
+      } else if (enrollment.currency_code === 'USD') {
         company = 'US';
       } else {
         company = 'CA';
@@ -265,15 +268,15 @@ LIMIT 1`;
         if (company === 'CA') {
           apiKey = paysafeCredentials.caApiKey;
           apiPassword = paysafeCredentials.caApiPassword;
-          if (enrollments[0].currency_code === 'CAD') {
+          if (enrollment.currency_code === 'CAD') {
             accountNumber = paysafeCredentials.caAccountCAD;
-          } else if (enrollments[0].currency_code === 'USD') {
+          } else if (enrollment.currency_code === 'USD') {
             accountNumber = paysafeCredentials.caAccountUSD;
-          } else if (enrollments[0].currency_code === 'GBP') {
+          } else if (enrollment.currency_code === 'GBP') {
             accountNumber = paysafeCredentials.caAccountGBP;
-          } else if (enrollments[0].currency_code === 'AUD') {
+          } else if (enrollment.currency_code === 'AUD') {
             accountNumber = paysafeCredentials.caAccountAUD;
-          } else if (enrollments[0].currency_code === 'NZD') {
+          } else if (enrollment.currency_code === 'NZD') {
             accountNumber = paysafeCredentials.caAccountNZD;
           } else {
             throw new HttpStatus.Conflict('Unsupported currency for Paysafe CA');
@@ -281,7 +284,7 @@ LIMIT 1`;
         } else if (company === 'US') {
           apiKey = paysafeCredentials.usApiKey;
           apiPassword = paysafeCredentials.usApiPassword;
-          if (enrollments[0].currency_code === 'USD') {
+          if (enrollment.currency_code === 'USD') {
             accountNumber = paysafeCredentials.usAccountUSD;
           } else {
             throw new HttpStatus.Conflict('Unsupported currency for Paysafe GB');
@@ -289,12 +292,12 @@ LIMIT 1`;
         } else if (company === 'GB') {
           apiKey = paysafeCredentials.gbApiKey;
           apiPassword = paysafeCredentials.gbApiPassword;
-          if (enrollments[0].currency_code === 'GBP') {
+          if (enrollment.currency_code === 'GBP') {
             accountNumber = paysafeCredentials.gbAccountGBP;
-          // } else if (enrollments[0].currency_code === 'AUD') {
-          //   accountNumber = paysafeCredentials.gbAccountAUD;
-          // } else if (enrollments[0].currency_code === 'NZD') {
-          //   accountNumber = paysafeCredentials.gbAccountNZD;
+            // } else if (enrollment.currency_code === 'AUD') {
+            //   accountNumber = paysafeCredentials.gbAccountAUD;
+            // } else if (enrollment.currency_code === 'NZD') {
+            //   accountNumber = paysafeCredentials.gbAccountNZD;
           } else {
             throw new HttpStatus.Conflict('Unsupported currency for Paysafe GB');
           }
@@ -307,13 +310,13 @@ LIMIT 1`;
         logger.info('creating profile');
         const profile = new Profile();
         profile.setLocale('en_US');
-        profile.setMerchantCustomerId(createCustomerId(enrollments[0].course_prefix + req.params.eId));
-        profile.setFirstName(students[0].first_name);
-        profile.setLastName(students[0].last_name);
-        profile.setGender(students[0].sex === 'M' ? 'M' : 'F');
-        profile.setEmail(students[0].email_address);
-        if (students[0].telephone_number !== null) {
-          profile.setPhone(students[0].telephone_number);
+        profile.setMerchantCustomerId(createCustomerId(enrollment.course_prefix + req.params.eId));
+        profile.setFirstName(student.first_name);
+        profile.setLastName(student.last_name);
+        profile.setGender(student.sex === 'M' ? 'M' : 'F');
+        profile.setEmail(student.email_address);
+        if (student.telephone_number !== null) {
+          profile.setPhone(student.telephone_number);
         }
         logger.debug('Profile Request', profile);
         const profileResult = await paysafe.getCustomerServiceHandler().createProfile(profile);
@@ -331,16 +334,16 @@ LIMIT 1`;
         // create an address
         logger.info('creating address');
         const address = new Address();
-        address.setStreet(students[0].address1);
-        if (students[0].address2) {
-          address.setStreet2(students[0].address2);
+        address.setStreet(student.address1);
+        if (student.address2) {
+          address.setStreet2(student.address2);
         }
-        address.setCity(students[0].city);
-        if (['CA', 'US', 'AU'].indexOf(students[0].country_code) !== -1 && students[0].province_code !== null) {
-          address.setState(students[0].province_code);
+        address.setCity(student.city);
+        if (['CA', 'US', 'AU'].indexOf(student.country_code) !== -1 && student.province_code !== null) {
+          address.setState(student.province_code);
         }
-        address.setZip(students[0].postal_code === null || students[0].postal_code.length === 0 ? 'NA' : students[0].postal_code);
-        address.setCountry(students[0].country_code);
+        address.setZip(student.postal_code === null || student.postal_code.length === 0 ? 'NA' : student.postal_code);
+        address.setCountry(student.country_code);
         address.setDefaultShippingAddressIndicator(true);
         logger.debug('Address Request', address);
         const addressResult = await paysafe.getCustomerServiceHandler().createAddress(profileId, address);
@@ -438,8 +441,8 @@ SET
       let newPaymentMethod: any;
       try {
         newPaymentMethod = await connection.query(sqlInsertPaymentMethod, [post, paymentType]);
-        await connection.query('UPDATE payment_methods SET `primary` = 0 WHERE enrollment_id = ?', req.params.eId);
-        await connection.query('UPDATE payment_methods SET `primary` = 1 WHERE id = ?', newPaymentMethod.insertId);
+        await connection.query('UPDATE payment_methods SET `primary` = 0 WHERE enrollment_id = ?', [req.params.eId]);
+        await connection.query('UPDATE payment_methods SET `primary` = 1 WHERE id = ?', [newPaymentMethod.insertId]);
         await connection.commit();
       } catch (err) {
         await connection.rollback();

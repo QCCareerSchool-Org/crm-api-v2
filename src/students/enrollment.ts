@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as HttpStatus from '@qccareerschool/http-status';
 import { logger } from '../logger';
 import pool from '../pool';
+import { RowDataPacket } from 'mysql2';
 
 /**
  * .
@@ -93,43 +94,57 @@ WHERE
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const students = await connection.query('SELECT id FROM students WHERE id = ?', [req.params.sId]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
 
       // retrieve the enrollment
-      const enrollments = await connection.query(sql, [ req.params.sId, req.params.eId ]);
-      if (!enrollments.length) {
+      const [ enrollments ] = await connection.query<IEnrollment[]>(sql, [ req.params.sId, req.params.eId ]);
+      const enrollment = enrollments[0];
+      if (!enrollment) {
         throw new HttpStatus.NotFound('enrollment not found');
       }
 
-      const result = enrollments[0];
+      const result = enrollment;
+      
+      interface ICourse extends RowDataPacket {
+
+      };
 
       // get course, currency, and transaction data
-      const courses = await connection.query(sqlSelectCourse, result.course_id);
-      if (!courses.length) {
+      const [ courses] = await connection.query<ICourse[]>(sqlSelectCourse, [result.course_id]);
+      const course = courses[0];
+      if (!course) {
         throw new HttpStatus.InternalServerError('course not found');
       }
-      result.course = courses[0];
+      result.course = course;
 
-      const currencies = await connection.query(sqlSelectCurrency, result.currency_id);
+      const currencies = await connection.query(sqlSelectCurrency, [result.currency_id]);
       if (!currencies.length) {
         throw new HttpStatus.InternalServerError('currency not found');
       }
       result.currency = currencies[0];
 
-      const transactions = await connection.query(sqlSelectTransactions, req.params.eId);
-      if (transactions[0].amount_paid === null) {
+      interface ITransaction extends RowDataPacket {
+          amount_paid: number | null;
+        }
+
+      const [ transactions ] = await connection.query<ITransaction[]>(sqlSelectTransactions, req.params.eId);
+      const transaction = transactions[0];
+      if (!transaction) {
+        throw Error('No transaction');
+      }
+      if (transaction.amount_paid === null) {
         result.amount_paid = 0;
         result.remaining_balance = parseFloat(Big(result.cost).minus(result.discount).toFixed(2));
       } else {
-        result.amount_paid = transactions[0].amount_paid;
+        result.amount_paid = transaction.amount_paid;
         result.remaining_balance = parseFloat(Big(result.cost).minus(result.discount).minus(result.amount_paid).toFixed(2));
       }
 
@@ -150,3 +165,9 @@ WHERE
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
   }
 }
+ export interface IEnrollment extends RowDataPacket {
+    status: string;
+    installment: number;
+    owing: number;
+    account_id: number | null;
+  }

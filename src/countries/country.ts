@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as HttpStatus from '@qccareerschool/http-status';
 import { logger } from '../logger';
 import pool from '../pool';
+import { RowDataPacket } from 'mysql2';
 
 /**
  * .
@@ -39,7 +40,7 @@ export async function get(req: express.Request, res: express.Response): Promise<
     try {
 
       // retrieve the list of countries
-      const countries = await connection.query(sql, req.params.cId);
+      const countries = await connection.query(sql, [req.params.cId]);
       if (!countries.length)
         throw new HttpStatus.NotFound('Country not found.');
 
@@ -59,4 +60,10 @@ export async function get(req: express.Request, res: express.Response): Promise<
     logger.error(err);
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({ error: err });
   }
+}
+
+export interface ICountry extends RowDataPacket {
+  id: number;
+  code: string;
+  name: string;
 }

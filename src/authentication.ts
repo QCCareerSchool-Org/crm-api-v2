@@ -12,6 +12,10 @@ import config from './config';
 import * as keys from './keys';
 import { logger } from './logger';
 import pool from './pool';
+import { IStudent } from './students/student';
+import { RowDataPacket } from 'mysql2';
+import { IUser } from './user';
+import { IToken } from './token';
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
@@ -64,7 +68,7 @@ export async function authenticate(req: express.Request, res: express.Response):
     }
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -73,13 +77,14 @@ export async function authenticate(req: express.Request, res: express.Response):
 
       // look for a student
       const sqlSelectStudents = 'SELECT id, password FROM students WHERE id = ? LIMIT 1';
-      const students = await connection.query(sqlSelectStudents, req.body.username);
-      if (students.length) {
+      const [ students ] = await connection.query<IStudent[]>(sqlSelectStudents, [ req.body.username ]);
+      const student = students[0];
+      if (student) {
 
-        id = students[0].id;
+        id = student.id;
         userType = 'student';
 
-        const result = await bcryptjs.compare(req.body.password, students[0].password.replace('$2y$', '$2a$'));
+        const result = await bcryptjs.compare(req.body.password, student.password.replace('$2y$', '$2a$'));
         if (result === false) {
           logger.warn('Unsucesful authentication attempt', req.body.username);
           throw new HttpStatus.UnprocessableEntity('username or password is incorrect');
@@ -87,17 +92,19 @@ export async function authenticate(req: express.Request, res: express.Response):
 
       } else {
 
+
         // check for an admin user
         const salt = 'e3DpP6a3811CQx4b46pV58Bon542wbp50F3GG42E'; // the CakePHP salt
         const sqlSelectUsers = 'SELECT id, password FROM users WHERE username = ? LIMIT 1';
-        const administrators = await connection.query(sqlSelectUsers, req.body.username);
-        if (administrators.length) {
+        const [administrators] = await connection.query<IUser[]>(sqlSelectUsers, [req.body.username]);
+        const administrator = administrators[0];
+        if (administrator) {
 
-          id = administrators[0].id;
+          id = administrator.id;
           userType = 'administrator';
 
           const hash = crypto.createHash('sha1').update(salt + req.body.password).digest('hex');
-          if (hash !== administrators[0].password) {
+          if (hash !== administrator.password) {
             logger.warn('Unsucesful authentication attempt', req.body.username);
             throw new HttpStatus.UnprocessableEntity('username or password is incorrect');
           }
@@ -156,6 +163,9 @@ export async function checkAuthentication(req: express.Request, res: express.Res
         if (parts.length === MIN_PARTS) {
           const scheme = parts[0];
           const credentials = parts[1];
+          if (!scheme || !credentials) {
+            throw Error('invalid data');
+          }
           if (scheme.toLowerCase() === 'bearer') {
             token = credentials;
           }
@@ -206,8 +216,11 @@ export async function checkAuthentication(req: express.Request, res: express.Res
     }).pattern(/./, Joi.any());
 
     const validationResult = schema.validate(payload);
+    if (!validationResult) {
+      throw Error('Validation failed');
+    }
     if (validationResult.error) {
-      res.status(HttpStatus.BAD_REQUEST).send(validationResult.error.details[0].message);
+      res.status(HttpStatus.BAD_REQUEST).send(validationResult.error.details[0]?.message);
       return;
     }
 
@@ -274,8 +287,3 @@ export async function studentAccess(req: express.Request, res: express.Response,
 
 }
 
-interface IToken {
-  iss: string;
-  sub: number;
-  userType: string;
-}

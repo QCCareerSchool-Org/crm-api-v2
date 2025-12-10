@@ -5,6 +5,9 @@ import * as fs from 'fs';
 import * as HttpStatus from '@qccareerschool/http-status';
 import { logger } from '../logger';
 import pool from '../pool';
+import { IStudent } from './student';
+import { IEnrollment } from './enrollment';
+import { RowDataPacket } from 'mysql2';
 
 /**
  * .
@@ -91,40 +94,48 @@ WHERE
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const [ students ] = await connection.query<IStudent[]>('SELECT id FROM students WHERE id = ?', [ req.params.sId ]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
 
       // retrieve the list of enrollments
-      const enrollments = await connection.query(sql, req.params.sId);
+      const [ enrollments ] = await connection.query<IEnrollment[]>(sql, [req.params.sId]);
 
       // get course, currency, and transacion data
       const reqs = enrollments.map(async (e: any) => {
 
-        const courses = await connection.query(sqlSelectCourse, e.course_id);
+        const courses = await connection.query(sqlSelectCourse, [e.course_id]);
         if (!courses.length) {
           throw new HttpStatus.InternalServerError('course not found');
         }
         e.course = courses[0];
 
-        const currencies = await connection.query(sqlSelectCurrency, e.currency_id);
+        const currencies = await connection.query(sqlSelectCurrency, [ e.currency_id ]);
         if (!currencies.length) {
           throw new HttpStatus.InternalServerError('currency not found');
         }
         e.currency = currencies[0];
 
-        const transactions = await connection.query(sqlSelectTransactions, e.id);
-        if (transactions[0].amount_paid === null) {
+        interface ITransaction extends RowDataPacket {
+          amount_paid: number | null;
+        }
+
+        const [ transactions ] = await connection.query<ITransaction[]>(sqlSelectTransactions, e.id);
+        const transaction = transactions[0];
+        if (!transaction) {
+          throw Error('No transaction found');
+        }
+        if (transaction.amount_paid === null) {
           e.amount_paid = 0;
           e.remaining_balance = parseFloat(Big(e.cost).minus(e.discount).toFixed(2));
         } else {
-          e.amount_paid = transactions[0].amount_paid;
+          e.amount_paid = transaction.amount_paid;
           e.remaining_balance = parseFloat(Big(e.cost).minus(e.discount).minus(e.amount_paid).toFixed(2));
         }
       });

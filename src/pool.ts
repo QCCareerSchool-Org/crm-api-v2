@@ -1,10 +1,10 @@
 import * as dotenv from 'dotenv';
-import * as mysql from 'promise-mysql';
+import mysql, { PoolOptions} from 'mysql2/promise';
 import path from 'path';
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-const config = {
+const config: PoolOptions = {
   connectionLimit: 100,
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -17,7 +17,7 @@ const config = {
 const pool = mysql.createPool(config);
 
 (async function test() {
-  console.log((await pool).query(`SHOW VARIABLES LIKE '%ssl%'`));
+  console.log(pool.query(`SHOW VARIABLES LIKE '%ssl%'`));
 })();
 
 export default pool;

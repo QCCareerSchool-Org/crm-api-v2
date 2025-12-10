@@ -4,6 +4,10 @@ import * as fs from 'fs';
 import * as HttpStatus from '@qccareerschool/http-status';
 import { logger } from '../logger';
 import pool from '../pool';
+import { IPaymentMethod } from './payment-method';
+import { IStudent } from './student';
+import { IEnrollment } from './enrollment';
+import { RowDataPacket } from 'mysql2';
 
 /**
  * .
@@ -32,19 +36,19 @@ export async function get(req: express.Request, res: express.Response): Promise<
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
       // check that this student exists
-      const students = await connection.query('SELECT id FROM students WHERE id = ?', req.params.sId);
+      const [ students ] = await connection.query<IStudent[]>('SELECT id FROM students WHERE id = ?', [ req.params.sId ]);
       if (!students.length) {
         throw new HttpStatus.NotFound('student not found');
       }
 
       // check that this enrollment exists
       const sqlSelectEnrollments = 'SELECT id FROM enrollments WHERE student_id = ? AND id = ?';
-      const enrollments = await connection.query(sqlSelectEnrollments, [ req.params.sId, req.params.eId ]);
+      const [ enrollments ] = await connection.query<IEnrollment[]>(sqlSelectEnrollments, [ req.params.sId, req.params.eId ]);
       if (!enrollments.length) {
         throw new HttpStatus.NotFound('enrollment not found');
       }
@@ -72,7 +76,11 @@ WHERE enrollment_id = ?`;
         sqlSelectTransactions += ' AND extra_charge = 0';
       }
 
-      const transactions = await connection.query(sqlSelectTransactions, req.params.eId);
+      interface ITransaction extends RowDataPacket {
+        payment_method_id: string;
+      }
+
+      const [ transactions ] = await connection.query<ITransaction[]>(sqlSelectTransactions, [ req.params.eId ]);
       const len = transactions.length;
 
       // get the payment_method for each transaction
@@ -83,9 +91,9 @@ WHERE id = ?
 LIMIT 1`;
 
       for (let i = 0; i < len; i++) {
-        const paymentMethods = await connection.query(sqlSelectPaymentMethod, transactions[i].payment_method_id);
+        const [ paymentMethods ] = await connection.query<IPaymentMethod[]>(sqlSelectPaymentMethod, [ transactions[i]!.payment_method_id ]);
         if (paymentMethods.length) {
-          transactions[i].payment_method = paymentMethods[0];
+          transactions[i]!.payment_method = paymentMethods[0];
         }
       }
 
