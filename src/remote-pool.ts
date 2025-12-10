@@ -26,6 +26,8 @@ if (process.env.REMOTE_DB_SSL) {
   };
 }
 
+console.log('remote');
+
 const pool = mysql.createPool(config);
 
 (async function test() {

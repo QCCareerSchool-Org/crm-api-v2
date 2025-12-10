@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import mysql, { PoolOptions} from 'mysql2/promise';
+import mysql, { PoolOptions } from 'mysql2/promise';
 import path from 'path';
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -13,6 +13,8 @@ const config: PoolOptions = {
   charset: process.env.DB_CHARSET,
   debug: false,
 };
+
+console.log('local');
 
 const pool = mysql.createPool(config);
 
