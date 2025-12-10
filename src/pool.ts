@@ -17,7 +17,8 @@ const config: PoolOptions = {
 const pool = mysql.createPool(config);
 
 (async function test() {
-  console.log('local', await pool.query(`SHOW VARIABLES LIKE '%ssl%'`));
+  const [ result ] =  await pool.query(`SHOW VARIABLES LIKE '%ssl%'`)
+  console.log('local', result);
 })();
 
 export default pool;
