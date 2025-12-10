@@ -62,7 +62,7 @@ export async function get(req: express.Request, res: express.Response): Promise<
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -111,7 +111,7 @@ LIMIT 1`;
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -233,7 +233,7 @@ export async function patch(req: express.Request, res: express.Response): Promis
     }
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -295,7 +295,7 @@ export async function patch(req: express.Request, res: express.Response): Promis
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -336,7 +336,7 @@ export async function getAddress(req: express.Request, res: express.Response): P
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -384,7 +384,7 @@ LIMIT 1`;
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -459,7 +459,7 @@ export async function updateAddress(req: express.Request, res: express.Response)
     };
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -519,7 +519,7 @@ export async function updateAddress(req: express.Request, res: express.Response)
       return res.status(HttpStatus.NO_CONTENT).end();
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -559,7 +559,7 @@ export async function getEmailAddress(req: express.Request, res: express.Respons
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -578,7 +578,7 @@ export async function getEmailAddress(req: express.Request, res: express.Respons
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -620,7 +620,7 @@ export async function updateEmailAddress(req: express.Request, res: express.Resp
     };
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -648,7 +648,7 @@ export async function updateEmailAddress(req: express.Request, res: express.Resp
       return res.status(HttpStatus.NO_CONTENT).end();
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -688,7 +688,7 @@ export async function getTelephoneNumber(req: express.Request, res: express.Resp
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -710,7 +710,7 @@ export async function getTelephoneNumber(req: express.Request, res: express.Resp
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -774,7 +774,7 @@ export async function updateTelephoneNumber(req: express.Request, res: express.R
     };
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -804,7 +804,7 @@ export async function updateTelephoneNumber(req: express.Request, res: express.R
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {

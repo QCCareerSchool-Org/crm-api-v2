@@ -64,7 +64,7 @@ export async function authenticate(req: express.Request, res: express.Response):
     }
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -123,7 +123,7 @@ export async function authenticate(req: express.Request, res: express.Response):
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {

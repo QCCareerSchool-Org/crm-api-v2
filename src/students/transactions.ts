@@ -32,7 +32,7 @@ export async function get(req: express.Request, res: express.Response): Promise<
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -94,7 +94,7 @@ LIMIT 1`;
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {

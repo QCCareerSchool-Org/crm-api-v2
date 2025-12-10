@@ -4,7 +4,7 @@ import path from 'path';
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-export default mysql.createPool({
+const config = {
   connectionLimit: 100,
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -12,4 +12,12 @@ export default mysql.createPool({
   database: process.env.DB_DATABASE,
   charset: process.env.DB_CHARSET,
   debug: false,
-});
+};
+
+const pool = mysql.createPool(config);
+
+(async function test() {
+  console.log((await pool).query(`SHOW VARIABLES LIKE '%ssl%'`));
+})();
+
+export default pool;

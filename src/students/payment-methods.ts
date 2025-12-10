@@ -45,7 +45,7 @@ export async function get(req: express.Request, res: express.Response): Promise<
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -93,7 +93,7 @@ AND NOT t.name = 'Cheques'`;
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -189,7 +189,7 @@ export async function create(req: express.Request, res: express.Response): Promi
     }
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -453,7 +453,7 @@ SET
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {

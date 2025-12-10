@@ -91,7 +91,7 @@ WHERE
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -137,7 +137,7 @@ WHERE
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {

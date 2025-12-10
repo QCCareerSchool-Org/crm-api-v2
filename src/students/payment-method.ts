@@ -38,7 +38,7 @@ export async function get(req: express.Request, res: express.Response): Promise<
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -81,7 +81,7 @@ LIMIT 1`;
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -122,7 +122,7 @@ export async function setPrimary(req: express.Request, res: express.Response): P
   try {
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -161,7 +161,7 @@ export async function setPrimary(req: express.Request, res: express.Response): P
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
@@ -284,7 +284,7 @@ LIMIT 1`;
     }
 
     // get a database connection from the pool
-    const connection = await pool.getConnection();
+    const connection = await (await pool).getConnection();
 
     try {
 
@@ -485,7 +485,7 @@ LIMIT 1`;
 
         // remove "hold" status from student center
         try {
-          await remotePool.query('UPDATE students SET on_hold = 0 WHERE account_id = ? AND course_code = ?', [
+          await (await remotePool).query('UPDATE students SET on_hold = 0 WHERE account_id = ? AND course_code = ?', [
             enrollments[0].account_id,
             paymentMethods[0].course_prefix,
           ]);
@@ -502,7 +502,7 @@ LIMIT 1`;
       return;
 
     } finally {
-      pool.releaseConnection(connection);
+      connection.release();
     }
 
   } catch (err) {
