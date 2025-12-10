@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
 app.use(`/v${VERSION}`, router);
 
 process.on('uncaughtException', (err) => {
-  logger.error('Uncaught exception', err);
+  logger.error('Uncaught exception', err.message, err.stack);
 });
 
 // start the server

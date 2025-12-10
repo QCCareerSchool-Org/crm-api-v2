@@ -30,7 +30,8 @@ const pool = mysql.createPool(config);
 
 (async function test() {
   console.log('remote');
-  console.log(await (await pool).query(`SHOW VARIABLES LIKE '%ssl%'`));
+  const result = await (await pool).query(`SHOW VARIABLES LIKE '%ssl%'`);
+  console.log(result);
 })();
 
 export default pool;
