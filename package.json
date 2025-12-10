@@ -12,7 +12,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@qccareerschool/http-status": "^2.1.1",
-    "@qccareerschool/paysafe": "0.0.12",
+    "@qccareerschool/paysafe": "^0.1.4",
     "@qccareerschool/winston-nodemailer": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/big.js": "^4.0.5",
@@ -25,12 +25,9 @@
     "@types/express": "^4.17.25",
     "@types/hapi__joi": "^16.0.12",
     "@types/helmet": "0.0.36",
-    "@types/jsonwebtoken": "^7.2.8",
     "@types/node": "^8.10.66",
-    "@types/nodemailer": "^6.4.21",
-    "@types/winston": "^2.4.4",
     "bcryptjs": "^2.4.3",
-    "big.js": "^5.2.2",
+    "big.js": "^7.0.1",
     "body-parser": "^1.20.4",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -40,13 +37,16 @@
     "express": "^4.22.1",
     "helmet": "^3.23.3",
     "joi": "^17.13.3",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.15.3",
     "nodemailer": "^7.0.11",
     "promise-mysql": "^5.2.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^7.0.4",
+    "@types/winston": "^2.4.4",
     "typescript": "^5.9.3"
   }
 }
