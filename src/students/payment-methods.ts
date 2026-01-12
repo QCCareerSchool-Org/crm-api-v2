@@ -46,7 +46,7 @@ export async function get(req: express.Request, res: express.Response): Promise<
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -190,7 +190,7 @@ export async function create(req: express.Request, res: express.Response): Promi
     }
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 

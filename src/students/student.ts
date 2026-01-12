@@ -427,7 +427,7 @@ export async function updateAddress(req: express.Request, res: express.Response)
     if (typeof req.body.postal_code === 'undefined') {
       throw new HttpStatus.BadRequest('postal_code is required');
     }
-    const postalCode: string = req.body.postal_code.length ? req.body.postal_code : null;
+    const postalCode = req.body.postal_code.length ? req.body.postal_code as string : null;
 
     // country_id, integer, not null
     if (typeof req.body.country_id === 'undefined') {
@@ -445,7 +445,7 @@ export async function updateAddress(req: express.Request, res: express.Response)
     };
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -546,7 +546,7 @@ export async function getEmailAddress(req: express.Request, res: express.Respons
   try {
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -608,7 +608,7 @@ export async function updateEmailAddress(req: express.Request, res: express.Resp
     };
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
@@ -763,7 +763,7 @@ export async function updateTelephoneNumber(req: express.Request, res: express.R
     };
 
     // get a database connection from the pool
-    const connection = await (await pool).getConnection();
+    const connection = await pool.getConnection();
 
     try {
 
